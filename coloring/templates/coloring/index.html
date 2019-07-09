@@ -57,31 +57,78 @@
 
 			// your rectangle gradient interaction goes in this function
 			// you may also add code outside of the function (e.g., global variables)
-			function myGradientInteraction(){
-				var tool = new paper.Tool();
+			function myGradientInteraction() {
+        var path = new paper.Path.Rectangle({
+          from: [150, 275],
+          to: [575, 450],
+          fillColor: 'red'
+        });
+        path.closed = true;
 
-				tool.onMouseDown = function (event) {
+        var tool = new paper.Tool();
+        var vOrigin;
+        tool.onMouseDown = function(event) {
+          vOrigin = event.point;
+        }
 
-				}
-
-				tool.onMouseUp = function (event) {
-					
-				}
-			}
+        tool.onMouseUp = function(event) {
+         var hit = path.hitTest(event.point, { tolerance: 10, fill: true });
+         if (hit) {
+           path.fillColor = {
+            gradient: {
+              stops: [cp.history[cp.history.length - 2], cp.history[cp.history.length - 1]]
+            },
+            origin: vOrigin,
+            destination: event.point
+          };
+         }
+          
+        }
+      }
 
 			// your custom interaction goes here!
 			// you may replace everything
 			function myCustomInteraction() {
 				var tool = new paper.Tool();
+        
+        var vOrigin;
+        var path;
+        tool.minDistance = 5;
 
 				tool.onMouseDown = function (event) {
-				    var hit = mandala.item.hitTest(event.point, { tolerance: 10, fill: true });
-				    if (hit) {
-				        hit.item.fillColor = cp.history[cp.history.length - 1];
-				    }
+          path = new paper.Path();
+          path.add(event.point);
 				}
+        
+        tool.onMouseDrag = function (event) {
+          path.add(event.point);
+        }
+        
+        tool.onMouseUp = function(event) {
+          if (path.length < 5) {
+            var hit = mandala.item.hitTest(path.segments[0].point, { tolerance: 5, fill: true });
+            if (hit) {
+                hit.item.fillColor = cp.history[cp.history.length - 1];
+            }
+          }
+          else {
+            for (var i = 0; i < path.length / 5; i++) {
+				      var hit = mandala.item.hitTest(path.getPointAt(i * 5), {tolerance: 5, fill: true});
+				      if (hit) {
+				         hit.item.fillColor = {
+                   gradient: {
+                      stops: [cp.history[cp.history.length - 2], cp.history[cp.history.length - 1]]
+                    },
+                    origin: path.getPointAt(0),
+                    destination: path.getPointAt(path.length)
+                };
+              }              
+            }
+          }
+        }
 			}
-
+      
+      
 
 			// create a color palette with the given colors
 			function createColorPalette(colors){
